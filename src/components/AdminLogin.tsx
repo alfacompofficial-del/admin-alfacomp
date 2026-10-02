@@ -307,7 +307,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
                     autoFocus
                     required
                     disabled={isVerifying || isSuccess || isLocked}
-                    placeholder="alfacompofficial@gmail.com"
+                    placeholder="alfacomp@company.uz"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-[#13161f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-white/20 outline-none focus:border-[#FF5A00] transition-all font-mono disabled:opacity-50"
