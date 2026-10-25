@@ -1,10 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error("[AlfaComp Admin] Missing Supabase env vars. Copy .env.example to .env and fill in your credentials.");
-}
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) || "https://vtlzfcjxpnrsqlsrvyer.supabase.co";
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || "sb_publishable_Ieiof0ojLifGDUpgD6ldVA_utmqM2nZ";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
