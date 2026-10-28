@@ -531,7 +531,7 @@ export const ProductDrawerEditor: React.FC<ProductDrawerEditorProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={isSaving || isUploading}
-                className="px-6 py-2.5 rounded-lg bg-[#0066ff] hover:bg-[#1a75ff] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-[#0066ff]/20 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-lg bg-[#1565C0] hover:bg-[#1976D2] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-[#1565C0]/20 disabled:opacity-50"
               >
                 {isSaving ? "Сохранение..." : product ? "Сохранить изменения" : "Создать товар"}
               </button>

@@ -44,4 +44,4 @@ Deploy to Netlify, Vercel, or any static host. Set the environment variables:
 
 ---
 
-© AlfaComp — admin.alfacompp.uz
+© AlfaComp — admin.alfacomp.uz

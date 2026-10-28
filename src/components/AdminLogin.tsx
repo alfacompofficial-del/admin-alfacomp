@@ -238,7 +238,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/[0.04] border border-white/10 text-[10px] font-mono text-white/60">
             <ShieldCheck className="w-3 h-3 text-[#22c55e]" />
-            <span>HOST: admin.alfacompp.uz</span>
+            <span>HOST: admin.alfacomp.uz</span>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-white/40 tracking-[0.16em] uppercase">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A00] animate-pulse" />
@@ -397,7 +397,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
       {/* ── Footer ─────────────────────────────────────────── */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-2 max-w-5xl w-full mx-auto text-[11px] font-mono text-white/30">
         <div>ALFACOMP TASHKENT · CENTRAL HARDWARE MANAGEMENT</div>
-        <div>TARGET: admin.alfacompp.uz ➔ LIVE ALFACOMP.UZ</div>
+        <div>TARGET: admin.alfacomp.uz ➔ LIVE ALFACOMP.UZ</div>
       </div>
     </div>
   );
