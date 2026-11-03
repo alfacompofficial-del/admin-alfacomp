@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 
 // Список разрешённых IP для административной панели
 const ALLOWED_ADMIN_IPS: string[] = [
-  "144.124.196.58", // Персональный IP администратора
+  "213.230.101.42", // Персональный IP администратора
 ];
 
 const CACHE_KEY = "admin_ip_cache_v3";
