@@ -3,11 +3,11 @@ import { supabase } from "../lib/supabase";
 
 // Список разрешённых IP для административной панели
 const ALLOWED_ADMIN_IPS: string[] = [
-  "144.124.192.54", // Персональный IP администратора
+  "213.230.78.112", // Персональный IP администратора
 ];
 
-const CACHE_KEY = "admin_ip_cache_v3";
-const CACHE_ALLOWED_KEY = "admin_allowed_v3";
+const CACHE_KEY = "admin_ip_cache_v4";
+const CACHE_ALLOWED_KEY = "admin_allowed_v4";
 const VISIT_LOGGED_KEY = "visit_logged_v1";
 
 const getPersistedResult = (): boolean | null => {
