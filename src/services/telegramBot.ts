@@ -1,8 +1,20 @@
 // ── Telegram Bot Order Sender & CRM Chat Service ──────────────────────────
-// Bot Token: 8508090986:AAFdA3MX80GuDeBHvMT2LZHA9Pm9Wtnj-IY
+// Токен безопасно подтягивается из переменных окружения (Render / .env)
+// и не сохраняется в открытом виде в публичном репозитории GitHub.
 
-const BOT_TOKEN = "8508090986:AAFdA3MX80GuDeBHvMT2LZHA9Pm9Wtnj-IY";
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+export function getBotToken(): string {
+  const envToken =
+    (typeof import.meta !== "undefined" &&
+      (import.meta.env?.VITE_BOT_TOKEN ||
+        import.meta.env?.VITE_TELEGRAM_BOT_TOKEN)) ||
+    "";
+  return typeof envToken === "string" ? envToken.trim() : "";
+}
+
+function getTelegramApi(): string {
+  const token = getBotToken();
+  return token ? `https://api.telegram.org/bot${token}` : "";
+}
 
 // ⚠️ ВАЖНО: Этот ID получает ВСЕ уведомления о заказах всегда, независимо от других настроек.
 // Изменить только здесь в коде.
@@ -77,7 +89,7 @@ export function saveStoredTelegramMessages(messages: StoredTelegramMessage[]): v
 // ── Send message to a specific chat (admin group or user) ──
 export async function sendTelegramMessage(chatId: string | number, text: string): Promise<boolean> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+    const res = await fetch(`${getTelegramApi()}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -100,7 +112,7 @@ export async function sendTelegramMessageWithDetails(
   text: string
 ): Promise<{ success: boolean; message?: StoredTelegramMessage; error?: string }> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+    const res = await fetch(`${getTelegramApi()}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -143,7 +155,7 @@ export async function editTelegramMessage(
   newText: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/editMessageText`, {
+    const res = await fetch(`${getTelegramApi()}/editMessageText`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -182,7 +194,7 @@ export async function deleteTelegramMessage(
   messageId: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/deleteMessage`, {
+    const res = await fetch(`${getTelegramApi()}/deleteMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -214,7 +226,7 @@ export async function deleteTelegramMessage(
  */
 export async function syncTelegramUpdates(): Promise<StoredTelegramMessage[]> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/getUpdates?limit=100&offset=-100`);
+    const res = await fetch(`${getTelegramApi()}/getUpdates?limit=100&offset=-100`);
     const data = await res.json();
     if (!data.ok || !Array.isArray(data.result)) {
       return loadStoredTelegramMessages();
@@ -262,8 +274,8 @@ export async function syncTelegramUpdates(): Promise<StoredTelegramMessage[]> {
         const greeting = `Здравствуйте, ${firstName}! 👋\n` +
           `Добро пожаловать в интернет-магазин <b>AlfaComp.uz</b> (Ташкент).\n\n` +
           `🖥 <b>Наш сайт:</b> https://alfacomp.uz\n` +
-          `📞 <b>Телефон:</b> +998 (90) 000-00-00\n` +
-          `📦 <b>Доставка:</b> по Ташкенту и всему Узбекистану\n` +
+          `📞 <b>Телефон:</b> +998 (88) 320-33-33\n` +
+          `📍 <b>Самовывоз:</b> г. Ташкент, базар «Малика», блок А27\n` +
           `🛡 <b>Гарантия:</b> официальная до 3 лет\n\n` +
           `💬 Напишите нам, что вас интересует, и наш менеджер ответит вам в ближайшее время!`;
 
@@ -326,7 +338,7 @@ export function extractTelegramUsers(messages: StoredTelegramMessage[]): Telegra
 // ── Get bot's admin/owner chat_id from updates (for finding the admin chat) ──
 export async function getBotUpdates(): Promise<any[]> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/getUpdates?limit=50&offset=-50`);
+    const res = await fetch(`${getTelegramApi()}/getUpdates?limit=50&offset=-50`);
     const data = await res.json();
     return data.ok ? data.result : [];
   } catch {
@@ -396,7 +408,7 @@ ${itemsList}
 💰 <b>ИТОГО: ${formatUZS(totalUZS)} сум${totalUSD ? ` (≈ $${totalUSD})` : ""}</b>
 ━━━━━━━━━━━━━━━━━━━━
 ✅ Покупатель подтвердил заказ через сайт alfacomp.uz
-📲 Свяжитесь с покупателем для подтверждения доставки!`;
+📲 Свяжитесь с покупателем для подтверждения заказа и самовывоза!`;
 
   // Получатели: владелец (OWNER) всегда включён + дополнительные администраторы
   const adminChatIds = getAdminChatIds();
@@ -452,7 +464,7 @@ export { OWNER_CHAT_ID };
 // ── Get bot info ──
 export async function getBotInfo(): Promise<{ username: string; first_name: string } | null> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/getMe`);
+    const res = await fetch(`${getTelegramApi()}/getMe`);
     const data = await res.json();
     return data.ok ? data.result : null;
   } catch {
@@ -469,7 +481,7 @@ export async function sendMessageAsAdmin(chatId: string | number, text: string):
 // ── Get recent messages to bot (for backward-compatibility) ──
 export async function getRecentBotMessages(): Promise<any[]> {
   try {
-    const res = await fetch(`${TELEGRAM_API}/getUpdates?limit=100&offset=-100`);
+    const res = await fetch(`${getTelegramApi()}/getUpdates?limit=100&offset=-100`);
     const data = await res.json();
     if (!data.ok) return [];
     return data.result.filter((u: any) => u.message);
