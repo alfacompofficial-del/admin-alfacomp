@@ -6,7 +6,7 @@ import {
   Globe, AlertTriangle, Copy, LogOut,
   Layers, Star, Send, Bot, MessageSquare,
   LayoutDashboard, Compass, Settings, Bell, ChevronLeft, ChevronRight, Menu,
-  Monitor, CheckCircle2, ExternalLink
+  Monitor, CheckCircle2, ExternalLink, History, Sparkles, FileSpreadsheet, MapPin, ShoppingCart
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,15 @@ import {
 import { supabase } from "../lib/supabase";
 import { formatPrice, resolveProductPrices } from "../lib/constants";
 import ProductDrawerEditor, { Product } from "./ProductDrawerEditor";
+import { BulkEditModal } from "./BulkEditModal";
+import { ExportModal } from "./ExportModal";
+import { SeoAuditTab } from "./SeoAuditTab";
+import { ChangeHistoryTab } from "./ChangeHistoryTab";
+import { UserGeographyTab } from "./UserGeographyTab";
+import { TelegramBotTab } from "./TelegramBotTab";
+import { SettingsTab } from "./SettingsTab";
+import { OrdersCrmTab } from "./OrdersCrmTab";
+import { logAdminAction } from "../services/auditLogger";
 
 type VisitorRow = {
   id: number;
@@ -35,7 +44,7 @@ const flagEmoji = (code?: string | null) => {
   return String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0)));
 };
 
-type AdminTab = "products" | "analytics" | "stats" | "telegram" | "overview" | "users" | "settings";
+type AdminTab = "products" | "orders" | "seo" | "history" | "stats" | "telegram" | "analytics" | "settings";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -80,6 +89,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   // ── Drawer Editor State ───────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerProduct, setDrawerProduct] = useState<Product | null>(null);
+
+  // ── Bulk Edit & Export Modal States ───────────────────────
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   // ── Exchange Rate State ───────────────────────────────────
   const [exchangeRate, setExchangeRate] = useState<number>(12800);
@@ -308,8 +321,34 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (error) throw error;
       toast.success("Товар удален");
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      logAdminAction({
+        action: "Удаление товара",
+        actionType: "delete",
+        targetId: id,
+        targetName: name,
+        details: `Товар «${name}» (#${id}) удален из каталога`,
+      });
     } catch {
       toast.error("Ошибка при удалении товара");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.length === 0) return;
+    if (!window.confirm(`Вы уверены, что хотите удалить ${selectedProductIds.length} выбранных товаров?`)) return;
+    try {
+      const { error } = await supabase.from("products").delete().in("id", selectedProductIds);
+      if (error) throw error;
+      toast.success(`Удалено ${selectedProductIds.length} товаров`);
+      logAdminAction({
+        action: "Массовое удаление",
+        actionType: "delete",
+        details: `Удалено ${selectedProductIds.length} товаров с ID: ${selectedProductIds.join(", ")}`,
+      });
+      setSelectedProductIds([]);
+      fetchProducts();
+    } catch (err: any) {
+      toast.error("Ошибка при удалении товаров: " + (err.message || ""));
     }
   };
 
@@ -329,6 +368,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       const { error } = await supabase.from("products").insert([duplicateData as any]);
       if (error) throw error;
       toast.success(`Товар продублирован: ${duplicateData.name}`);
+      logAdminAction({
+        action: "Дублирование товара",
+        actionType: "create",
+        targetName: duplicateData.name,
+        details: `Создана копия товара «${p.name}» (#${p.id})`,
+      });
       fetchProducts();
     } catch {
       toast.error("Не удалось продублировать товар");
@@ -341,6 +386,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (error) throw error;
       toast.success(!current ? "Товар переведен в наличие!" : "Товар снят с продажи");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, in_stock: !current } : p)));
+      logAdminAction({
+        action: "Смена статуса наличия",
+        actionType: "stock",
+        targetId: id,
+        details: `Товар #${id} переведен в статус «${!current ? "В наличии" : "Не в наличии"}»`,
+      });
     } catch {
       toast.error("Ошибка переключения статуса наличия");
     }
@@ -367,6 +418,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     if (!error) {
       toast.success(`Цена обновлена: $${usdVal} (${formatPrice(finalUZS)} сум)`);
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: finalUZS } : p)));
+      logAdminAction({
+        action: "Смена цены товара",
+        actionType: "price",
+        targetId: id,
+        details: `Товар #${id}: цена обновлена на $${usdVal} (${formatPrice(finalUZS)} сум)`,
+      });
       cancelEditPrice();
     } else {
       toast.error("Ошибка сохранения цены");
@@ -391,6 +448,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     if (!error) {
       toast.success("Название обновлено!");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: val } : p)));
+      logAdminAction({
+        action: "Смена названия товара",
+        actionType: "name",
+        targetId: id,
+        targetName: val,
+        details: `Товар #${id}: новое название «${val}»`,
+      });
       cancelEditName();
     } else {
       toast.error("Ошибка сохранения названия");
@@ -515,12 +579,14 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const NAV_ITEMS = [
-    { id: "overview" as AdminTab, label: "Главная", icon: LayoutDashboard },
     { id: "products" as AdminTab, label: "Товары и каталог", icon: Package },
-    { id: "analytics" as AdminTab, label: "Аналитика витрины", icon: BarChart3 },
-    { id: "stats" as AdminTab, label: "Откуда идут пользователи", icon: Compass },
+    { id: "orders" as AdminTab, label: "Заказы & CRM", icon: ShoppingCart },
+    { id: "seo" as AdminTab, label: "SEO Центр", icon: Search },
+    { id: "history" as AdminTab, label: "История изменений", icon: History },
+    { id: "stats" as AdminTab, label: "Откуда пользователи", icon: Compass },
     { id: "telegram" as AdminTab, label: "Telegram / Бот", icon: Send },
-    { id: "settings" as AdminTab, label: "Настройки", icon: Settings },
+    { id: "analytics" as AdminTab, label: "Аналитика витрины", icon: BarChart3 },
+    { id: "settings" as AdminTab, label: "Настройки & Курс", icon: Settings },
   ];
 
   return (
@@ -897,11 +963,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     </select>
 
                     <button
-                      onClick={handleExportCSV}
-                      className="p-2.5 bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-white/70 hover:text-white rounded-xl transition-all"
-                      title="Скачать все товары в CSV"
+                      onClick={() => setExportModalOpen(true)}
+                      className="flex items-center gap-2 px-3.5 py-2 bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                      title="Скачать Excel или все фото в ZIP"
                     >
                       <Download className="w-4 h-4 text-[#0066ff]" />
+                      <span>Экспорт / Фото</span>
                     </button>
                   </div>
                 </div>
@@ -942,6 +1009,51 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   })}
                 </div>
               </div>
+
+              {/* Bulk Selection Actions Bar */}
+              {selectedProductIds.length > 0 && (
+                <div className="bg-[#0b1528] border-2 border-[#0066ff] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-[0_0_25px_rgba(0,102,255,0.25)] animate-in fade-in duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#0066ff] flex items-center justify-center font-black text-white text-sm shadow-md shadow-[#0066ff]/40">
+                      {selectedProductIds.length}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <span>Выделено товаров: {selectedProductIds.length}</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0066ff]/20 text-[#4ea1ff]">
+                          Пакетное действие
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#7a8fa6] mt-0.5">
+                        Редактируйте цены, названия, категории, фото или удаляйте выбранные позиции в 1 клик
+                      </div>
+                    </div>
+                  </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setBulkModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0066ff] hover:bg-[#1a75ff] text-white text-xs font-bold transition-all shadow-lg shadow-[#0066ff]/30 active:scale-95"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>Массовое редактирование</span>
+                      </button>
+                      <button
+                        onClick={handleBulkDelete}
+                        className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs font-semibold transition-all active:scale-95"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Удалить выбранные</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedProductIds([])}
+                        className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-white/70 hover:text-white transition-all"
+                      >
+                        Снять выделение
+                      </button>
+                    </div>
+                  </div>
+              )}
 
               {/* Desktop Table */}
               <div className="bg-[#0b1528] rounded-2xl border border-[#16274a] overflow-hidden shadow-2xl">
@@ -1222,6 +1334,27 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
           )}
 
+          {/* Orders & CRM Tab */}
+          {tab === "orders" && <OrdersCrmTab products={products} exchangeRate={exchangeRate} />}
+
+          {/* SEO Audit Tab */}
+          {tab === "seo" && <SeoAuditTab />}
+
+          {/* Change History Tab */}
+          {tab === "history" && <ChangeHistoryTab />}
+
+          {/* User Geography & World Map Tab */}
+          {tab === "stats" && (
+            <UserGeographyTab
+              visitors={visitors}
+              loading={visitorsLoading}
+              onRefresh={fetchVisitors}
+            />
+          )}
+
+          {/* Telegram / Bot Management Tab */}
+          {tab === "telegram" && <TelegramBotTab />}
+
           {/* Analytics tab */}
           {tab === "analytics" && (
             <div className="space-y-6">
@@ -1245,8 +1378,38 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </div>
             </div>
           )}
+
+          {/* Settings & CBU Exchange Rate Tab */}
+          {tab === "settings" && (
+            <SettingsTab
+              currentExchangeRate={exchangeRate}
+              onUpdateExchangeRate={updateExchangeRate}
+            />
+          )}
         </main>
       </div>
+
+      {/* Bulk Edit Modal */}
+      <BulkEditModal
+        isOpen={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        selectedIds={selectedProductIds}
+        allProducts={products}
+        categories={allCategories}
+        exchangeRate={exchangeRate}
+        onSuccess={() => {
+          setSelectedProductIds([]);
+          fetchProducts();
+        }}
+      />
+
+      {/* Export Options Modal (Excel / ZIP Photos) */}
+      <ExportModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        products={products}
+        exchangeRate={exchangeRate}
+      />
 
       {/* Product Drawer Editor */}
       <ProductDrawerEditor
