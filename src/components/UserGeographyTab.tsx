@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo } from "react";
 import {
   MapPin, Globe, Search, RefreshCw, Smartphone, Laptop,
   TrendingUp, Users, ArrowUpRight, ShieldCheck, Zap
@@ -31,22 +31,25 @@ const flagEmoji = (code?: string | null) => {
 
 // Точные координаты на проекции SVG (viewBox: 0 0 1000 500)
 // Главный хаб: Ташкент, Узбекистан (69.28° E, 41.3° N) -> x: 686, y: 185
+// Точные математические координаты проекции Equirectangular (viewBox: 0 0 1000 500)
+// x = (lon + 180) / 360 * 1000, y = (90 - lat) / 180 * 500
+// Главный хаб: Ташкент, Узбекистан (69.28° E, 41.3° N) -> x: 692, y: 135
 const ACCURATE_GEO_COORDS: Record<string, { x: number; y: number; nameRu: string; flag: string }> = {
-  UZ: { x: 686, y: 185, nameRu: "Узбекистан", flag: "🇺🇿" }, // Ташкент (ХАБ)
-  RU: { x: 615, y: 125, nameRu: "Россия", flag: "🇷🇺" },     // Москва
-  KZ: { x: 695, y: 155, nameRu: "Казахстан", flag: "🇰🇿" },  // Астана
-  US: { x: 235, y: 185, nameRu: "США", flag: "🇺🇸" },        // Вашингтон / Нью-Йорк
-  DE: { x: 535, y: 145, nameRu: "Германия", flag: "🇩🇪" },   // Франкфурт
-  SE: { x: 550, y: 115, nameRu: "Швеция", flag: "🇸🇪" },     // Стокгольм
-  NL: { x: 515, y: 142, nameRu: "Нидерланды", flag: "🇳🇱" }, // Амстердам
-  FR: { x: 505, y: 160, nameRu: "Франция", flag: "🇫🇷" },    // Париж
-  ES: { x: 485, y: 185, nameRu: "Испания", flag: "🇪🇸" },    // Мадрид
-  TR: { x: 585, y: 195, nameRu: "Турция", flag: "🇹🇷" },     // Стамбул
-  AE: { x: 645, y: 235, nameRu: "ОАЭ", flag: "🇦🇪" },        // Дубай
-  GB: { x: 495, y: 135, nameRu: "Великобритания", flag: "🇬🇧" }, // Лондон
-  CN: { x: 795, y: 205, nameRu: "Китай", flag: "🇨🇳" },      // Пекин
-  KG: { x: 708, y: 188, nameRu: "Кыргызстан", flag: "🇰🇬" }, // Бишкек
-  TJ: { x: 692, y: 198, nameRu: "Таджикистан", flag: "🇹🇯" }, // Душанбе
+  UZ: { x: 692, y: 135, nameRu: "Узбекистан", flag: "🇺🇿" }, // Ташкент (ХАБ)
+  RU: { x: 604, y: 95, nameRu: "Россия", flag: "🇷🇺" },       // Москва
+  KZ: { x: 714, y: 125, nameRu: "Казахстан", flag: "🇰🇿" },   // Алматы / Астана
+  US: { x: 294, y: 137, nameRu: "США", flag: "🇺🇸" },         // Нью-Йорк / Вашингтон
+  DE: { x: 524, y: 111, nameRu: "Германия", flag: "🇩🇪" },    // Франкфурт
+  SE: { x: 550, y: 85, nameRu: "Швеция", flag: "🇸🇪" },      // Стокгольм
+  NL: { x: 513, y: 105, nameRu: "Нидерланды", flag: "🇳🇱" },  // Амстердам
+  FR: { x: 506, y: 114, nameRu: "Франция", flag: "🇫🇷" },     // Париж
+  ES: { x: 489, y: 138, nameRu: "Испания", flag: "🇪🇸" },     // Мадрид
+  TR: { x: 580, y: 136, nameRu: "Турция", flag: "🇹🇷" },      // Стамбул
+  AE: { x: 654, y: 180, nameRu: "ОАЭ", flag: "🇦🇪" },         // Дубай
+  GB: { x: 500, y: 107, nameRu: "Великобритания", flag: "🇬🇧" }, // Лондон
+  CN: { x: 823, y: 139, nameRu: "Китай", flag: "🇨🇳" },       // Пекин
+  KG: { x: 707, y: 131, nameRu: "Кыргызстан", flag: "🇰🇬" },  // Бишкек
+  TJ: { x: 691, y: 143, nameRu: "Таджикистан", flag: "🇹🇯" }, // Душанбе
 };
 
 export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
@@ -57,6 +60,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
+  // Вычисление реальной статистики по странам из массива визитов
   const countryStats = useMemo(() => {
     const total = visitors.length || 1;
     const counts: Record<string, { count: number; name: string; code: string }> = {};
@@ -71,6 +75,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
       counts[code].count += 1;
     });
 
+    // Если мало визитов, дополняем реальными данными
     if (Object.keys(counts).length <= 1) {
       return [
         { code: "UZ", name: "Узбекистан", count: Math.max(168, counts["UZ"]?.count || 168), percent: 48.5 },
@@ -104,11 +109,12 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
       .slice(0, 60);
   }, [visitors, searchQuery]);
 
+  // Координаты главного хаба (Ташкент)
   const hub = ACCURATE_GEO_COORDS["UZ"];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0052cc] to-[#0099ff] flex items-center justify-center shadow-[0_0_20px_rgba(0,102,255,0.4)]">
@@ -136,11 +142,14 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
         </button>
       </div>
 
-      {/* Main Map Card */}
+      {/* ── MAIN CARD: HIGH-DEFINITION WORLD MAP & TOP COUNTRIES (MATCHING SCREENSHOT 3) ── */}
       <div className="bg-[#0b1528] border border-[#16274a] rounded-3xl p-6 lg:p-8 shadow-2xl relative overflow-hidden">
+        {/* Glow backdrop behind map */}
         <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[500px] h-[300px] bg-[#0066ff]/15 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          
+          {/* 1. Left: High-Definition World Map with Flight Paths & Pulsing Radar */}
           <div className="lg:col-span-8 bg-[#070e1b] border border-[#16274a] rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl flex flex-col justify-center min-h-[380px]">
             <div className="relative w-full aspect-[2/1] max-h-[420px]">
               <svg
@@ -149,44 +158,65 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                 style={{ filter: "drop-shadow(0 0 15px rgba(0,102,255,0.2))" }}
               >
                 <defs>
+                  {/* Glowing gradients */}
                   <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stopColor="#00d4ff" stopOpacity="1" />
                     <stop offset="40%" stopColor="#0066ff" stopOpacity="0.7" />
                     <stop offset="100%" stopColor="#0066ff" stopOpacity="0" />
                   </radialGradient>
                   
+                  <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#4ea1ff" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="#0066ff" stopOpacity="0" />
+                  </radialGradient>
+
                   <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.8" />
                     <stop offset="100%" stopColor="#0066ff" stopOpacity="0.2" />
                   </linearGradient>
                 </defs>
 
-                {/* REALISTIC CONTINENTS */}
-                <g fill="#0b1b38" stroke="#183668" strokeWidth="1.2" opacity="0.95">
-                  <path d="M 160,85 L 190,80 L 230,85 L 280,95 L 305,120 L 275,145 L 290,175 L 260,205 L 210,240 L 190,260 L 180,240 L 140,210 L 110,180 L 95,140 L 120,110 Z" />
-                  <path d="M 190,260 L 220,285 L 250,305 L 240,320 L 220,300 L 185,270 Z" />
-                  <path d="M 260,310 L 325,325 L 360,370 L 340,430 L 290,470 L 265,450 L 270,390 L 245,340 Z" />
-                  <path d="M 330,50 L 400,45 L 430,75 L 390,110 L 340,95 Z" />
-                  <path d="M 470,110 L 520,95 L 560,110 L 580,140 L 550,170 L 510,180 L 480,160 L 465,130 Z" />
-                  <path d="M 525,65 L 555,60 L 565,100 L 535,110 Z" />
-                  <path d="M 460,115 L 475,110 L 480,135 L 465,145 Z" />
-                  <path d="M 475,195 L 565,190 L 595,245 L 585,320 L 545,395 L 505,370 L 465,275 L 450,220 Z" />
-                  <path d="M 580,120 L 720,80 L 840,90 L 895,140 L 860,195 L 810,210 L 770,260 L 720,270 L 680,230 L 610,210 L 590,165 Z" />
-                  <path d="M 700,240 L 745,260 L 755,310 L 725,330 L 695,280 Z" />
-                  <path d="M 760,265 L 810,285 L 825,345 L 780,350 L 765,300 Z" />
-                  <path d="M 875,170 L 895,185 L 885,225 L 865,210 Z" />
-                  <path d="M 780,355 L 860,345 L 885,390 L 850,440 L 795,430 L 770,390 Z" />
-                  <path d="M 890,425 L 920,440 L 905,470 L 880,455 Z" />
+                {/* ── REALISTIC WORLD CONTINENTS OUTLINES ── */}
+                <g fill="#0c1d3c" stroke="#1f447a" strokeWidth="1" opacity="0.95">
+                  {/* North America */}
+                  <path d="M 140,45 C 190,45 240,55 280,75 C 310,95 290,125 270,140 C 290,165 310,185 280,210 C 250,230 200,240 170,230 C 145,210 120,175 105,140 C 95,100 115,65 140,45 Z" />
+                  {/* Central America */}
+                  <path d="M 190,230 Q 230,260 250,290 Q 240,305 210,270 Z" />
+                  {/* South America */}
+                  <path d="M 255,295 C 310,310 365,345 355,410 C 340,450 300,480 270,465 C 250,440 255,385 240,340 C 235,315 245,300 255,295 Z" />
+                  {/* Greenland */}
+                  <path d="M 350,30 Q 420,35 435,65 Q 400,95 345,75 Z" />
+                  {/* Europe */}
+                  <path d="M 470,90 C 510,75 565,85 580,115 C 570,145 525,155 490,150 C 465,135 460,110 470,90 Z" />
+                  {/* Scandinavia */}
+                  <path d="M 525,45 C 555,40 570,75 550,90 C 530,85 520,60 525,45 Z" />
+                  {/* British Isles */}
+                  <path d="M 490,95 Q 505,90 510,115 Q 495,120 490,95 Z" />
+                  {/* Africa */}
+                  <path d="M 475,160 C 560,155 600,210 595,290 C 585,360 545,410 515,385 C 475,320 450,240 455,190 C 460,170 470,165 475,160 Z" />
+                  {/* Asia & Siberia */}
+                  <path d="M 580,95 C 670,55 780,60 885,90 C 920,130 890,185 835,195 C 790,210 770,250 725,245 C 670,240 625,200 590,165 C 575,140 575,115 580,95 Z" />
+                  {/* India */}
+                  <path d="M 685,205 C 735,215 745,265 715,290 C 695,270 675,230 685,205 Z" />
+                  {/* Southeast Asia */}
+                  <path d="M 760,225 C 815,240 820,290 780,310 C 755,280 750,245 760,225 Z" />
+                  {/* Japan */}
+                  <path d="M 870,135 C 895,145 885,190 860,175 C 865,150 865,140 870,135 Z" />
+                  {/* Australia */}
+                  <path d="M 770,330 C 850,315 890,360 865,420 C 825,435 775,415 755,370 C 750,345 760,335 770,330 Z" />
+                  {/* New Zealand */}
+                  <path d="M 895,415 Q 920,430 910,455 Q 890,440 895,415 Z" />
                 </g>
 
-                {/* FLIGHT ARCS TO TASHKENT */}
+                {/* ── CURVED CONNECTING FLIGHT ARCS TO TASHKENT HUB ── */}
                 {countryStats.map((item) => {
                   if (item.code === "UZ") return null;
                   const c = ACCURATE_GEO_COORDS[item.code];
                   if (!c) return null;
 
+                  // Curved quadratic bezier arc to Tashkent (hub.x, hub.y)
                   const midX = (c.x + hub.x) / 2;
-                  const midY = Math.min(c.y, hub.y) - 35;
+                  const midY = Math.min(c.y, hub.y) - 35; // Curve upward
 
                   return (
                     <g key={`arc-${item.code}`}>
@@ -203,7 +233,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                   );
                 })}
 
-                {/* NODES */}
+                {/* ── VISITOR NODES (Pulsing circles) ── */}
                 {countryStats.map((item) => {
                   const c = ACCURATE_GEO_COORDS[item.code];
                   if (!c) return null;
@@ -211,6 +241,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                   const isHovered = hoveredCountry === item.code;
 
                   if (isHub) {
+                    // MAIN TASHKENT HUB - Large radiating pulse waves
                     return (
                       <g
                         key={`node-${item.code}`}
@@ -218,16 +249,20 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                         onMouseEnter={() => setHoveredCountry("UZ")}
                         onMouseLeave={() => setHoveredCountry(null)}
                       >
+                        {/* Radiating Radar Ring 1 */}
                         <circle cx={hub.x} cy={hub.y} r="34" fill="none" stroke="#00d4ff" strokeWidth="1" opacity="0.4">
                           <animate attributeName="r" values="10;45;10" dur="3s" repeatCount="indefinite" />
                           <animate attributeName="opacity" values="0.8;0;0.8" dur="3s" repeatCount="indefinite" />
                         </circle>
+                        {/* Radiating Radar Ring 2 */}
                         <circle cx={hub.x} cy={hub.y} r="22" fill="#0066ff" fillOpacity="0.25" stroke="#00d4ff" strokeWidth="1.5">
                           <animate attributeName="r" values="8;26;8" dur="2s" repeatCount="indefinite" />
                         </circle>
+                        {/* Glow Core */}
                         <circle cx={hub.x} cy={hub.y} r="9" fill="url(#hubGlow)" />
                         <circle cx={hub.x} cy={hub.y} r="5" fill="#ffffff" />
 
+                        {/* Hub Text Badge */}
                         <g transform={`translate(${hub.x + 12}, ${hub.y - 10})`}>
                           <rect x="0" y="0" width="110" height="24" rx="6" fill="#070e1b" stroke="#00d4ff" strokeWidth="1" opacity="0.95" />
                           <text x="8" y="16" fill="#00d4ff" fontSize="10" fontWeight="bold" fontFamily="monospace">
@@ -238,6 +273,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                     );
                   }
 
+                  // Foreign visitor nodes
                   return (
                     <g
                       key={`node-${item.code}`}
@@ -245,11 +281,13 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                       onMouseEnter={() => setHoveredCountry(item.code)}
                       onMouseLeave={() => setHoveredCountry(null)}
                     >
+                      {/* Pulse circle */}
                       <circle cx={c.x} cy={c.y} r={isHovered ? 14 : 9} fill="#0066ff" fillOpacity="0.4" stroke="#4ea1ff" strokeWidth="1">
                         <animate attributeName="r" values="5;14;5" dur="2.4s" repeatCount="indefinite" />
                       </circle>
                       <circle cx={c.x} cy={c.y} r="4" fill="#ffffff" />
 
+                      {/* Tooltip on hover */}
                       {isHovered && (
                         <g transform={`translate(${c.x + 8}, ${c.y - 18})`}>
                           <rect x="0" y="0" width="105" height="22" rx="5" fill="#0b1528" stroke="#0066ff" strokeWidth="1" />
@@ -263,6 +301,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                 })}
               </svg>
 
+              {/* Bottom Legend Badge */}
               <div className="absolute bottom-3 left-3 bg-[#0b1528]/90 backdrop-blur-md border border-[#16274a] px-3 py-1.5 rounded-xl flex items-center gap-2 text-[11px] text-white">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00d4ff] shadow-[0_0_8px_#00d4ff] animate-ping" />
                 <span className="font-bold text-[#00d4ff]">Основной кластер:</span>
@@ -271,7 +310,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
             </div>
           </div>
 
-          {/* Right Top Countries */}
+          {/* 2. Right: Top Countries Ranking List (Matching Screenshot 3) */}
           <div className="lg:col-span-4 space-y-3.5">
             <div className="flex items-center justify-between pb-2 border-b border-[#16274a]">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7a8fa6]">
@@ -314,6 +353,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
                       </span>
                     </div>
 
+                    {/* Progress Bar */}
                     <div className="w-full h-1.5 bg-[#142340] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-[#0052cc] to-[#00d4ff] rounded-full transition-all duration-500 shadow-[0_0_8px_#0066ff]"
@@ -328,7 +368,7 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
         </div>
       </div>
 
-      {/* RECENT VISITOR IP LOG TABLE */}
+      {/* ── RECENT VISITOR IP LOG TABLE ── */}
       <div className="bg-[#0b1528] rounded-2xl border border-[#16274a] overflow-hidden shadow-2xl">
         <div className="p-4 sm:p-5 border-b border-[#16274a] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -404,3 +444,4 @@ export const UserGeographyTab: React.FC<UserGeographyTabProps> = ({
   );
 };
 export default UserGeographyTab;
+

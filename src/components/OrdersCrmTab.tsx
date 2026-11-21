@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   ShoppingCart, Printer, Send, Phone, User, CheckCircle2,
   Clock, Package, AlertCircle, Plus, Search, Filter,
@@ -6,7 +6,8 @@ import {
   ChevronDown, ChevronUp, Trash2, ExternalLink, Copy, Check, Sparkles, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
-import { Product } from "./ProductDrawerEditor";
+import { formatPrice } from "../lib/constants";
+import type { Product } from "../hooks/useProducts";
 import { sendTelegramMessageWithDetails } from "../services/telegramBot";
 import { logAdminAction } from "../services/auditLogger";
 import {
@@ -23,8 +24,6 @@ import {
   generateOrderId,
   createOrderFromCart
 } from "../services/ordersService";
-
-const formatPrice = (val: number) => new Intl.NumberFormat("ru-RU").format(val);
 
 const STATUS_LABELS: Record<OrderStatus, { label: string; color: string; badge: string }> = {
   new: { label: "Новый заказ", color: "#3b82f6", badge: "bg-blue-500/15 border-blue-500/30 text-blue-400" },
@@ -161,6 +160,7 @@ export const OrdersCrmTab: React.FC<OrdersCrmTabProps> = ({ products, exchangeRa
       adminNotes: "Тестовый заказ для проверки анкеты и раскрытия товаров.",
     });
 
+    // Автоматически раскрываем созданный заказ
     setExpandedOrders((prev) => new Set(prev).add(newOrder.id));
     toast.success(`Тестовый заказ #${newOrder.id} создан и раскрыт!`);
   };
@@ -1034,3 +1034,4 @@ export const OrdersCrmTab: React.FC<OrdersCrmTabProps> = ({ products, exchangeRa
     </div>
   );
 };
+

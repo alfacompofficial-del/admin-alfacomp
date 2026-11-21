@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   Send, Bot, MessageSquare, Users, Sparkles, Smile,
   Plus, Trash2, Check, RefreshCw, AlertCircle, Shield,
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   syncTelegramUpdates, sendTelegramMessageWithDetails,
   extractTelegramUsers, StoredTelegramMessage, TelegramUser,
-  getBotToken, OWNER_CHAT_ID
+  getBotToken, OWNER_CHAT_ID, setCustomBotToken
 } from "../services/telegramBot";
 import { logAdminAction } from "../services/auditLogger";
 
@@ -68,25 +68,35 @@ const DEFAULT_COMMANDS: BotCustomCommand[] = [
   },
 ];
 
+// Категоризированная коллекция стикеров и эмодзи для быстрой отправки клиентам
+// Расширенная категоризированная коллекция стикеров и эмодзи для отправки клиентам
 const STICKER_PACKS = [
   {
     name: "🖥️ ПК & Железо",
-    items: ["🖥️", "💻", "⚡", "🎮", "🕹️", "🔌", "💾", "💿", "🖱️", "⌨️", "🎧", "🖨️", "📱", "📡", "🚀"],
+    items: ["🖥️", "💻", "⚡", "🎮", "🕹️", "🔌", "💾", "💽", "🖱️", "⌨️", "🎧", "🖨️", "📱", "📡", "🚀", "⚙️", "🔧", "🔋"],
   },
   {
     name: "📦 Заказы & Доставка",
-    items: ["📦", "🛒", "🏷️", "💸", "💵", "💳", "🧾", "🚚", "📍", "⏰", "🛡️", "⭐", "💎", "✅", "🤝"],
+    items: ["📦", "🛒", "🏷️", "💸", "💵", "💳", "🧾", "🚚", "📍", "⏱️", "🛡️", "⭐", "💎", "✅", "🤝", "🏪", "🎁", "📝"],
   },
   {
     name: "🔥 Реакции & Эмодзи",
-    items: ["🔥", "👍", "💯", "🎯", "🎉", "👏", "😎", "🤖", "💪", "🤩", "👌", "❤️", "🙌", "✨", "❗"],
+    items: ["🔥", "👍", "💯", "🎯", "🎉", "👏", "😎", "🤖", "💪", "🤩", "👌", "❤️", "🙌", "✨", "❗", "🏆", "👀", "🥳"],
+  },
+  {
+    name: "💬 Поддержка & Статус",
+    items: ["👋", "⏳", "🔔", "📞", "🤝", "🔍", "🆗", "ℹ️", "⚠️", "🆘", "🛠️", "💬", "💡", "📢", "📨", "📬", "✅", "❌"],
+  },
+  {
+    name: "⚡ Gaming & RTX",
+    items: ["🕹️", "👾", "🎯", "🔥", "⚡", "💥", "🚀", "👑", "🥇", "🏆", "🏅", "⚔️", "🛡️", "💎", "🔮", "✨", "🌟", "⭐"],
   },
 ];
 
 export const TelegramBotTab: React.FC = () => {
   const [messages, setMessages] = useState<StoredTelegramMessage[]>([]);
   const [users, setUsers] = useState<TelegramUser[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(OWNER_CHAT_ID);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -123,7 +133,7 @@ export const TelegramBotTab: React.FC = () => {
         setSelectedChatId(userList[0].chat_id);
       }
       if (showToast) {
-        toast.success(`Сообщения обновлены (${allMsgs.length} шт.)`);
+        toast.success(`Сообщения обновлены: получено ${allMsgs.length} сообщений`);
       }
     } catch (e: any) {
       if (showToast) toast.error("Ошибка синхронизации: " + e.message);
@@ -149,6 +159,7 @@ export const TelegramBotTab: React.FC = () => {
     localStorage.setItem(STORAGE_COMMANDS_KEY, JSON.stringify(newCmds));
   };
 
+  // Синхронизация подсказок команд с Telegram Bot API (/setMyCommands)
   const handleSyncTelegramCommands = async (cmdsToSync = commands) => {
     const token = getBotToken();
     if (!token) {
@@ -214,8 +225,9 @@ export const TelegramBotTab: React.FC = () => {
     setCmdName("");
     setCmdDesc("");
     setCmdResponse("");
-    toast.success(`Команда ${cleanCmd} создана!`);
+    toast.success(`Команда ${cleanCmd} создана! Синхронизируем подсказку с Telegram...`);
 
+    // Автоматическая отправка команды в Telegram Bot API /setMyCommands
     await handleSyncTelegramCommands(updated);
 
     logAdminAction({
@@ -239,6 +251,7 @@ export const TelegramBotTab: React.FC = () => {
     handleSyncTelegramCommands(updated);
   };
 
+  // Отправка текстового сообщения или стикера
   const handleSendReply = async (customText?: string) => {
     const textToSend = (customText || replyText).trim();
     if (!selectedChatId || !textToSend) return;
@@ -273,6 +286,7 @@ export const TelegramBotTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0052cc] to-[#0099ff] flex items-center justify-center shadow-[0_0_20px_rgba(0,102,255,0.4)]">
@@ -302,6 +316,7 @@ export const TelegramBotTab: React.FC = () => {
         </div>
       </div>
 
+      {/* ── TWO-COLUMN LAYOUT: CHATS & MESSAGES ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[640px]">
         {/* Left: Chat Users List */}
         <div className="lg:col-span-4 bg-[#0b1528] border border-[#16274a] rounded-2xl flex flex-col overflow-hidden shadow-xl">
@@ -362,8 +377,9 @@ export const TelegramBotTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Message Feed */}
+        {/* Right: Two-Way Message Feed & Chat Console */}
         <div className="lg:col-span-8 bg-[#0b1528] border border-[#16274a] rounded-2xl flex flex-col overflow-hidden shadow-xl">
+          {/* Active Chat Header */}
           <div className="p-4 bg-[#080f1e] border-b border-[#16274a] flex items-center justify-between">
             {activeUser ? (
               <div className="flex items-center gap-3">
@@ -385,15 +401,28 @@ export const TelegramBotTab: React.FC = () => {
                     )}
                   </div>
                   <div className="text-[10px] text-[#7a8fa6] font-mono">
-                    Telegram Chat ID: {activeUser.chat_id}
+                    Telegram Chat ID: {activeUser.chat_id} · Прямой диалог
                   </div>
                 </div>
               </div>
             ) : (
               <span className="text-xs text-[#7a8fa6] font-mono">Выберите чат слева</span>
             )}
+
+            {activeUser && (
+              <a
+                href={`https://t.me/${activeUser.username || ""}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-[11px] text-[#0066ff] font-bold"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Открыть в Telegram</span>
+              </a>
+            )}
           </div>
 
+          {/* Messages Scroll Area */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#070e1b]/50">
             {currentChatMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#7a8fa6]">
@@ -445,10 +474,12 @@ export const TelegramBotTab: React.FC = () => {
                   ? "bg-[#0066ff] border-[#0066ff] text-white"
                   : "bg-[#0b1528] border-[#16274a] text-amber-400 hover:bg-[#142340]"
               }`}
+              title="Открыть стикеры и эмодзи"
             >
               <Smile className="w-4 h-4" />
               <span className="text-[11px] font-mono">Стикеры</span>
             </button>
+
             <button
               onClick={() => setReplyText("📍 Наш адрес: Ташкент, базар «Малика», блок А27 (самовывоз)")}
               className="px-2.5 py-1 rounded-lg bg-[#0b1528] text-[#7a8fa6] hover:text-white text-[11px] font-medium whitespace-nowrap border border-[#16274a]"
@@ -467,8 +498,15 @@ export const TelegramBotTab: React.FC = () => {
             >
               🛡 Гарантия 3 года
             </button>
+            <button
+              onClick={() => setReplyText("✅ Товар в наличии на складе! Можете приехать и забрать.")}
+              className="px-2.5 py-1 rounded-lg bg-[#0b1528] text-[#7a8fa6] hover:text-white text-[11px] font-medium whitespace-nowrap border border-[#16274a]"
+            >
+              ✅ В наличии
+            </button>
           </div>
 
+          {/* ── EXPANDED STICKER & EMOJI DRAWER (MORE STICKERS) ── */}
           {showStickers && (
             <div className="p-3 bg-[#070e1b] border-t border-[#16274a] space-y-2">
               <div className="flex items-center gap-2 border-b border-[#142340] pb-1.5">
@@ -486,12 +524,14 @@ export const TelegramBotTab: React.FC = () => {
                   </button>
                 ))}
               </div>
+
               <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1">
                 {STICKER_PACKS[activeStickerTab].items.map((emoji) => (
                   <button
                     key={emoji}
                     onClick={() => handleSendReply(emoji)}
                     className="text-2xl p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all"
+                    title={`Отправить стикер ${emoji}`}
                   >
                     {emoji}
                   </button>
@@ -500,10 +540,15 @@ export const TelegramBotTab: React.FC = () => {
             </div>
           )}
 
+          {/* Message Input Box */}
           <div className="p-3 bg-[#080f1e] border-t border-[#16274a] flex items-center gap-2">
             <input
               type="text"
-              placeholder={selectedChatId ? "Написать ответ клиенту от имени бота..." : "Выберите диалог..."}
+              placeholder={
+                selectedChatId
+                  ? "Написать ответ клиенту от имени бота..."
+                  : "Выберите диалог..."
+              }
               disabled={!selectedChatId || isSending}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
@@ -527,7 +572,7 @@ export const TelegramBotTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Commands Manager */}
+      {/* ── BOT COMMANDS MANAGER & /setcommand ── */}
       <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-6 shadow-xl space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#16274a]">
           <div>
@@ -546,6 +591,7 @@ export const TelegramBotTab: React.FC = () => {
             <button
               onClick={() => handleSyncTelegramCommands()}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0f2142] border border-[#1b3668] hover:border-[#0066ff] text-white text-xs font-bold transition-all"
+              title="Отправить список команд в Telegram API /setMyCommands"
             >
               <RefreshCw className="w-3.5 h-3.5 text-[#0066ff]" />
               <span>Синхронизировать с Telegram (/setMyCommands)</span>
@@ -561,6 +607,7 @@ export const TelegramBotTab: React.FC = () => {
           </div>
         </div>
 
+        {/* Create Command Form */}
         {isCreatingCommand && (
           <div className="p-5 rounded-2xl bg-[#070e1b] border border-[#1b3668] space-y-4 animate-in fade-in duration-200">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
@@ -569,7 +616,9 @@ export const TelegramBotTab: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-[11px] text-[#7a8fa6] block mb-1">Команда</label>
+                <label className="text-[11px] text-[#7a8fa6] block mb-1">
+                  Команда (напр. /skidka или /bonus)
+                </label>
                 <input
                   type="text"
                   placeholder="/command"
@@ -580,7 +629,9 @@ export const TelegramBotTab: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] text-[#7a8fa6] block mb-1">Описание</label>
+                <label className="text-[11px] text-[#7a8fa6] block mb-1">
+                  Краткое описание (для подсказки в Telegram)
+                </label>
                 <input
                   type="text"
                   placeholder="Описание для подсказки..."
@@ -591,14 +642,19 @@ export const TelegramBotTab: React.FC = () => {
               </div>
             </div>
 
+            {/* Scope Selection */}
             <div>
-              <label className="text-[11px] text-[#7a8fa6] block mb-1">Доступность</label>
+              <label className="text-[11px] text-[#7a8fa6] block mb-1">
+                Для кого доступна команда?
+              </label>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setCmdScope("all")}
                   className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                    cmdScope === "all" ? "bg-[#0066ff] border-[#0066ff] text-white shadow-md" : "bg-[#0b1528] border-[#16274a] text-[#7a8fa6]"
+                    cmdScope === "all"
+                      ? "bg-[#0066ff] border-[#0066ff] text-white shadow-md shadow-[#0066ff]/30"
+                      : "bg-[#0b1528] border-[#16274a] text-[#7a8fa6] hover:text-white"
                   }`}
                 >
                   Для всех клиентов (публичная подсказка)
@@ -607,7 +663,9 @@ export const TelegramBotTab: React.FC = () => {
                   type="button"
                   onClick={() => setCmdScope("admin")}
                   className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                    cmdScope === "admin" ? "bg-amber-600 border-amber-500 text-white shadow-md" : "bg-[#0b1528] border-[#16274a] text-[#7a8fa6]"
+                    cmdScope === "admin"
+                      ? "bg-amber-600 border-amber-500 text-white shadow-md"
+                      : "bg-[#0b1528] border-[#16274a] text-[#7a8fa6] hover:text-white"
                   }`}
                 >
                   Только для ID админа ({cmdAdminId})
@@ -615,11 +673,14 @@ export const TelegramBotTab: React.FC = () => {
               </div>
             </div>
 
+            {/* Response Text */}
             <div>
-              <label className="text-[11px] text-[#7a8fa6] block mb-1">Ответ бота</label>
+              <label className="text-[11px] text-[#7a8fa6] block mb-1">
+                Что должен ответить бот при вводе команды?
+              </label>
               <textarea
                 rows={3}
-                placeholder="Текст ответа бота на эту команду..."
+                placeholder="Текст ответа бота на эту команду (поддерживает эмодзи и HTML)..."
                 value={cmdResponse}
                 onChange={(e) => setCmdResponse(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-[#0b1528] border border-[#16274a] text-xs text-white focus:border-[#0066ff] focus:outline-none"
@@ -645,23 +706,36 @@ export const TelegramBotTab: React.FC = () => {
           </div>
         )}
 
+        {/* Commands List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {commands.map((cmd) => (
-            <div key={cmd.id} className="p-4 rounded-xl bg-[#070e1b] border border-[#16274a] space-y-2 text-xs">
+            <div
+              key={cmd.id}
+              className="p-4 rounded-xl bg-[#070e1b] border border-[#16274a] space-y-2 text-xs"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-[#4ea1ff] text-sm">{cmd.command}</span>
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                    cmd.scope === "all" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400"
-                  }`}>
+                  <span className="font-mono font-bold text-[#4ea1ff] text-sm">
+                    {cmd.command}
+                  </span>
+                  <span
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                      cmd.scope === "all"
+                        ? "bg-blue-500/15 text-blue-400"
+                        : "bg-amber-500/15 text-amber-400"
+                    }`}
+                  >
                     {cmd.scope === "all" ? "Для всех" : "Только админ"}
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleToggleCommand(cmd.id)}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-colors ${
-                      cmd.isEnabled ? "bg-emerald-500/20 text-emerald-400" : "bg-white/10 text-white/40"
+                      cmd.isEnabled
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-white/10 text-white/40"
                     }`}
                   >
                     {cmd.isEnabled ? "Включена" : "Отключена"}
@@ -674,6 +748,7 @@ export const TelegramBotTab: React.FC = () => {
                   </button>
                 </div>
               </div>
+
               <div className="text-[#a0b3c6]">{cmd.description}</div>
               <div className="p-2.5 rounded-lg bg-[#0b1528] text-white/90 font-mono text-[11px] whitespace-pre-wrap border border-[#16274a]">
                 {cmd.responseText}
@@ -686,3 +761,4 @@ export const TelegramBotTab: React.FC = () => {
   );
 };
 export default TelegramBotTab;
+
